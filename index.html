@@ -1,0 +1,351 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=UTF-8" name="Content-Type">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:site" content="@mewo2">
+        <meta name="twitter:title" content="Generating naming languages">
+        <meta name="twitter:description" content="An interactive exploration of how the bot @unchartedatlas generates
+langauges and placenames.">
+        <meta name="twitter:image" content="https://mewo2.com/deserts/map.png">
+
+        <link rel="stylesheet" href="/style.css" />
+        <link href='https://fonts.googleapis.com/css?family=Raleway:400,700' rel='stylesheet' type='text/css'>
+        <title>
+Generating naming languages
+</title>
+        
+    </head>
+    <body>
+        <div id="header">
+                    <a href="/">mewo2.com</a> is the website of Martin O'Leary<br>
+                    <em>artist, designer, teacher, researcher</em>
+        </div>
+        <hr>
+        <div id="container">
+            <div id="menu">
+                <ul>
+                    <li><a href="/installations/">Installations</a></li>
+                    <li><a href="/pictures/">Pictures</a></li>
+                    <li><a href="/text/">Text</a></li>
+                    <li><a href="/web/">Web</a></li>
+                    <li><a href="/bots/">Bots</a></li>
+                    <li><a href="/software/">Software</a></li>
+                    <hr>
+                    <li><a href="/about/">About</a></li>
+                    <li><a href="https://shop.mewo2.com/">Shop</a></li>
+                    <li><a href="/contact/">Contact</a></li>
+
+                    <hr>
+                    <li><a href="https://twitter.com/mewo2">Twitter</a></li>
+                    <li><a href="https://instagram.com/mewo2">Instagram</a></li>
+                    <li><a href="https://github.com/mewo2">Github</a></li>
+                    <li><a href="https://patreon.com/mewo2">Patreon</a></li>
+                    <li><a href="https://mewo2.substack.com/">Newsletter</a></li>
+                    <hr>
+                </ul>
+            </div>
+            <div id="content">
+<div class="note">
+    <h1>Generating naming languages</h1>
+    <script src="/js/jquery-3.1.0.js"></script>
+
+<script src="/js/language.js"></script>
+
+<script src="/js/languagecontrols.js"></script>
+
+<p><img src="/deserts/map.png" width="60%" style="float: right;" alt="An example map from the generator"></p>
+<p>These are some notes on how I generate the placenames in my Twitter bot
+<a href="https://twitter.com/unchartedatlas">@unchartedatlas</a>, which is based on a generator I originally
+produced during <a href="https://github.com/dariusk/NaNoGenMo-2015/issues/156">NaNoGenMo 2015</a>. There's JavaScript code for the
+generator on Github <a href="https://github.com/mewo2/naming-language">here</a>, and the original messy Python generator
+code can be seen <a href="https://github.com/mewo2/deserts">here</a>.</p>
+<p>You may also be interested in <a href="/notes/terrain/">these notes</a> which describe the map
+generator part of the bot.</p>
+<h3>Motivations</h3>
+<p>I wanted to produce something which was a step above the usual alphabetic soup
+of generated placenames, and which was capable of producing recognisably
+distinct languages. The initial idea was that different regions of each map
+would have different languages, but I abandoned this because it was too hard to
+make it clear that this was what was going on, while still having the languages
+themselves be interesting.</p>
+<p>The problem is to generate something like what the constructed languages
+(conlang) community call a 'naming language'. This is a light sketch of a
+language, focusing purely on the parts which are necessary to produce names. So
+there's little to no grammar, but a good sense of what the language sounds
+like, and how it's written. An excellent resource on how to do this 'by hand'
+is Mark Rosenfelder's <a href="http://www.zompist.com/kit.html">Language Construction Kit</a>, which goes on to
+explain how to flesh out your language into something that can manage actual
+sentences.</p>
+<p>I'm going to talk through building up the generator I produced, stage by stage.
+This doesn't match at all the order in which the code was developed - in many
+cases I started with a much simpler version of a stage, then later tore it out
+and replaced it with what I describe below. There were also several dead ends
+which I tried and rejected, such as starting with a proto-language, and
+applying historical sound changes. Instead you're going to get the 'clean'
+version that makes it look like I knew what I was doing all along.</p>
+<h3>First steps: nonsense syllables</h3>
+<p>Let's start by generating some nonsense syllables, using a very basic set of
+sounds. For consonants, we'll use a fairly minimal set: /p t k m n s l/ (I'll
+use slashes // to indicate when I mean sounds, rather than letters). These are
+a nice simple set to work with, because they cover a variety of sounds, but
+they're all very common across languages, and they can all be written
+unambiguously in the Roman alphabet. For vowels we'll use the standard /a e i o
+u/. Each syllable will be a consonant, then a vowel, then another consonant
+(CVC).</p>
+<div class="example" id="basicLanguage" ></div>
+
+<script>
+    testControl("basicLanguage");    
+</script>
+
+<p>These are fine, and they could all be perfectly good English words (if spelled
+a little differently). However, by picking the most common and boring sounds,
+we've ended up a bit lacking in personality. Real languages have distinctive
+sounds which make them more recognisable. So let's swap in some more varied
+consonant sets and see how things change.</p>
+<h3>Consonants</h3>
+<p>As we add more sounds, we run into the problem of sounds which are difficult to
+spell in an unambiguous way, including a few sounds which don't exist in
+English. We'll deal with spelling properly later, so for now we'll use the
+<a href="https://en.wikipedia.org/wiki/International_Phonetic_Alphabet">International Phonetic Alphabet</a>. For most sounds, the IPA symbols are
+the same as the usual Roman letters, but there are a few which are different:</p>
+<ul>
+<li>/ʃ/ - the 'sh' sound</li>
+<li>/ʒ/ - sometimes written 'zh', this is the 's' from 'pleasure', or a French 'j'</li>
+<li>/ʧ/ - the 'ch' sound, as in 'chair'. As the symbol suggests, this is actually just /t/ and /ʃ/ ('sh') mashed together</li>
+<li>/ʤ/- the 'j' from 'judge'. Again, it's really just /d/ and /ʒ/ ('zh') said at almost the same time</li>
+<li>/ŋ/ - the 'ng' sound from the end of 'hang'. This is a sound in its own right, and is really no more related to 'n' than 'ch' is to 'c'</li>
+<li>/j/ - the 'y' from 'year' (not to be confused with /ʤ/)</li>
+</ul>
+<p>There are also a few sounds which might be unfamiliar. We don't want to go too
+far afield, or the reader will have no idea how to pronounce things, but adding
+a few extra sounds can go a long way to making something seem realistic.</p>
+<ul>
+<li>/x/ - this is a 'kh' sound, like in German 'Bach' or Scottish 'loch'</li>
+<li>/ɣ/ - a 'gh' sound, like /x/ but with the vocal chords vibrating. Can be heard in the Spanish 'amigo'</li>
+<li>/q/ - this is like a /k/, but pronounced further back in the mouth. It's probably best known from Arabic words like Qu'ran and Iraq</li>
+<li>/ʔ/ - the glottal stop. This does exist in English, but we never write it, so it can be hard to spot. It's the sound in the middle of 'uh-oh', or which replaces the 'tt' in 'button' in some accents.</li>
+</ul>
+<p>As well as having a more varied selection, we can weight the consonants so that
+some are more common than others. One easy way of doing this is to order the
+consonants randomly, then when we have to choose one, we generate a random
+number between zero and one, square it (so it's still between zero and one, but
+biased towards the low end) and use that to index into the list. We'll re-use
+this technique later on whenever we have to randomly choose from a list - it
+gives the random choices a little bit of extra texture.</p>
+<div class="example" id="consLanguage" ></div>
+
+<script>
+    consPicker("consLanguage");
+</script>
+
+<p>This is starting to make some progress. The Hawaiian sounds definitely have a
+different feel to the Arabic ones. However, these syllables all look a bit
+uniform. That's not necessarily bad within a language, but it does limit the
+amount of variation we can have between languages.</p>
+<h3>Phonotactics</h3>
+<p>What we need is a better way of constructing syllables. This is the area of
+linguistics called <a href="https://en.wikipedia.org/wiki/Phonotactics">phonotactics</a>. Different languages combine
+their sounds in different ways, and this turns out to be responsible for a lot
+of the way a language feels. For example, let's look at a list of cities in
+China.</p>
+<div class="example">
+Shanghai / Beijing / Chongqing / Guangzhou / Shenzhen / Tianjin / Wuhan / Dongguan / Chengdu
+</div>
+
+<p>Even if you've never heard of them before, these feel like a unified set of
+names. The secret isn't in the sounds, which are fairly diverse and not very
+distinctive (at least to read). Instead it's in how they're put together.</p>
+<p>First off, the majority of words in Mandarin have two syllables. This gives it
+a very clear rhythmic quality. Secondly, the syllable structure is pretty much
+constant. Each syllable consists of a single consonant, a vowel or two, and
+then optionally either /n/ or /ŋ/ (written ng). So 'shan' is a valid Mandarin
+syllable, but 'stan' and 'nash' are not.</p>
+<p>English phonotactics are much more complicated, with up to three consonants at
+the start of a syllable ('street', 'spring'), and up to four at the end
+('worlds', 'prompts'). There are also lots of restrictions on what can go where
+(e.g. no word starts with /ŋ/ or ends in /h/ - 'hang' is a word, but 'ngah'
+isn't).  Replicating a system of that kind of complexity probably isn't worth
+the effort for our purposes, so all of the languages we make will be
+phonotactically fairly simple.</p>
+<p>We'll introduce some new groups of consonants, sibilants (/s ʃ f/, etc),
+liquids/glides (/l r w j/) and finals (anything goes here, they're just a special
+'end-of-syllable' group). Where before we had CVC syllables
+(consonant-vowel-consonant), we can now have things like S?CVF (optional
+sibilant-consonant-vowel-final).</p>
+<div class="example" id="tactics"></div>
+
+<script>
+    ptPicker("tactics");
+</script>
+
+<p>So, adding some phonotactics gives us both variety (between languages) and
+consistency (within a language), both of which are excellent features.
+Unfortunately, as we've got it set up, there are a few problems. Sometimes we
+come up with syllables like 'ssot', which has the same sound twice in a row.
+Generally speaking this isn't something which happens in natural languages -
+the two sounds will fuse into a longer version of the same sound. We'd like to
+rule that out, along with some other cases of hard to pronounce clusters. A
+little bit of difficulty is fine, but too much and it just looks like we're
+throwing letters together at random.</p>
+<p>The easiest thing to do here is just to check for these 'restricted' sequences
+of sounds, and if we find one, throw out the syllable and generate again.</p>
+<div class="example" id="restricts"></div>
+
+<script>
+    resPicker("restricts");
+</script>
+
+<h3>Orthography</h3>
+<p>At this point we're probably a bit sick of looking at arcane IPA symbols, and
+we're starting to think about how our language will be spelled. For the most
+part, it's not worth doing anything too fancy here. Real languages have
+complicated spelling systems with silent letters and context-dependent choices,
+but a lot of that will be completely invisible to a reader who has no idea how
+things should be pronounced in the first place. Instead, we want to focus on
+the aesthetics of the spelling system (or 'orthography' in linguistics
+terminology).</p>
+<p>For example, looking at China again, the city of 广州 has been variously
+romanized as Kwang-chow, Kuang-chou, Kuaon-tseu, Kong-ziu, Gwong-zau, Gwóngjāu,
+Goangjoou or Guǎngzhōu. These all represent more or less the same underlying
+sounds, but give very different aesthetics.</p>
+<p>Many sounds, of course, have very clear choices of spelling. Almost every
+language with an /m/ sound romanizes it as 'm', and vice versa, if you see an
+'m' in an unknown language, you can be pretty sure it's pronounced as /m/.
+We'll start with a 'default' orthography, with standard correspondences like
+this, and apply 'patches' to it which cover the more ambiguous sounds. It would
+be easy to end up with a mishmash of conflicting symbols, but we'll get a much
+stronger sense of a unified aesthetic if we apply these patches in sets. For
+example, a French-inspired orthography would use 'ch' for /ʃ/ and 'j' for /ʒ/,
+while a Slavic-inspired set might use 'š' and 'ž'.</p>
+<div class="example" id="corth"></div>
+
+<script>
+    corthPicker("corth");
+</script>
+
+<h3>Vowels</h3>
+<p>With consonants out of the way now, we can move on to vowels. We're going to
+cheat a little bit here. Whereas consonants are discrete and recognisable,
+vowels are kind of mushy and ambiguous. The sounds that are represented by 'a'
+in various languages are all sort of similar, but it's impossible to know
+exactly which one we're dealing with unless we know the language.</p>
+<p>Because of this, we're not going to bother assigning phonetically accurate
+values to each vowel. Instead we'll have the basic /a e i o u/, and then some
+variants, which I'll write /A E I O U/ (these are not actual IPA symbols). Each
+language will have some subset of these, and we can apply a vowel orthography
+in the same way we did with the consonants.</p>
+<div class="example" id="vorth"></div>
+
+<script>
+    vorthPicker("vorth");
+</script>
+
+<h3>Morphology</h3>
+<p>Now that we've got some good syllables, we can start mushing them together to
+form words. This is another opportunity to give the language some distinctive
+flavour. We already saw how Mandarin's two-syllable words give it a clear
+aesthetic - there are also languages with extremely long words, like
+Greenlandic <em>toqutserusuppoq</em> 'to consider murder' or German
+<em>Niederschlagswahrscheinlichkeit</em> 'likelihood of rain'. Our language should
+have a typical range of word-lengths, bearing in mind that most languages have
+plenty of short words.</p>
+<div class="example" id="syll"></div>
+
+<script>
+    syllPicker("syll");
+</script>
+
+<p>Nice, we now have a bunch of nonsense words with a consistent feel. If we
+wanted, we could happily stop here. However, there are a few extra things we
+can do to give our language a little bit of higher-level structure, and to help
+build the illusion of meaning.</p>
+<p>In real languages, words are built out of units called 'morphemes', which are
+the smallest units of language which still carry meaning. Some words are single
+morphemes (e.g. 'happy', 'sad', 'platypus'), and some can be divided up into
+smaller units (e.g. 'un-help-ful', 'rest-less', 're-consider-s'). The
+relationship between syllables and morphemes, both of which combine to form
+words, is hazy at best.</p>
+<p>Fortunately, we're making up our language, so we can make it as simple as we
+like. One syllable equals one morpheme. This lets us keep all our existing
+infrastructure. When we want to generate a word from a particular class, e.g.
+city names, we'll use one 'city' morpheme, and draw the rest from a pool of
+generic morphemes.</p>
+<p>How do these pools of morphemes work? We want them to start empty, and to grow
+in a controllable way as we draw more and more samples. To do this, we keep a
+list of already created morphemes, and when choosing a morpheme to use, we
+select randomly from this list, plus a fixed number of 'new morpheme' tokens.
+If one of these tokens is chosen, then we generate a new syllable and add it to
+the list.</p>
+<p>For generic morphemes, we use ten 'new morpheme' tokens, whereas for the
+word-class pools, we use just one. This means that, for example, once three
+morphemes have been generated, the word-class pools have a 3/4 chance of
+reusing an existing morpheme, whereas the generic pool only has a 3/13 chance.
+This gives a lot of variety in the generic morphemes (but still some
+reincorporation), while the class-specific morphemes will recur a lot. We also
+keep track of all morphemes so that we don't accidentally generate the same
+morpheme in two different pools (or twice in the same pool!).</p>
+<div class="example" id="morph"></div>
+
+<script>
+    morphDemo("morph");
+</script>
+
+<h3>Making names</h3>
+<p>We can use these words unmodified as names, but there are a few extra tricks
+which can add some texture to the language. Firstly we want to look at
+multi-word names. As a simple approach, we just decide that half the time,
+we're going to generate two words and combine them somehow. We can also have an
+optional one-syllable word which links the two, indicating some sort of
+preposition or grammatical particle. Multi-word names can be either joined by
+spaces or hyphens, depending on the orthography. We also allow a small
+proportion of names to start with a similar one-syllable grammatical particle
+(perhaps meaning 'the' or something similar).</p>
+<p>Another trick we can apply is to re-use the morpheme pool idea at the word
+level. This means that multi-word placenames will often reincorporate the names
+of other places, which is nice. We also include a simple filter which prevents
+duplicate names.</p>
+<p>Finally, we filter names based on length. Names which are too short are dull
+and repetitive, and names which are too long don't look great on the map. We
+simply reject anything with less than 5 characters, or more than 12.</p>
+<div class="example" id="final"></div>
+
+<script>
+    finalDemo("final");
+</script>
+
+<p>So that's the version as currently running (more or less). There's code you can
+play with on <a href="https://github.com/mewo2/naming-language">GitHub</a>. Here are some ideas which I never properly
+implemented, but which could be fun as extensions:</p>
+<ul>
+<li>Synchronic sound changes: rules which change some of the sounds depending on context (e.g. German /d/ becomes /t/ at the end of a word, Latin /k/ becomes /ʧ/ before /i/ or /e/)</li>
+<li>Historical sound changes: start with an 'ancestral form' and evolve the word systematically. Do this in multiple ways to produce a family of languages.</li>
+<li>Generated scripts: why should a generated language use the Roman alphabet? How do these people write things among themselves? Invent an alphabet (or similar) and show how the names are really spelled.</li>
+<li>Better grammar: break our morphemes out into roots and modifiers, and come up with some rules about how they're combined</li>
+</ul>
+<p>If you do any of these things, or produce anything else interesting with the
+code, please let me know!</p>
+    <hr>
+    If you've enjoyed this piece, please consider <a href="https://www.patreon.com/mewo2">contributing on Patreon</a> so I can do more things like this.
+</div>
+</div>
+        </div>
+        <div id="footer">
+            
+            
+        </div>
+        <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', 'UA-31259805-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+    </body>
+</html>

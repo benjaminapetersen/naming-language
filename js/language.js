@@ -484,3 +484,13 @@ var ressets = [
     }
 ];
 
+
+console.log("Running....");
+console.log('Make random language...');
+console.log(makeRandomLanguage());
+console.log('Make basic language...');
+console.log(makeBasicLanguage());
+
+
+
+
